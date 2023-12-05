@@ -8,7 +8,7 @@
 - ...
 
 # Usage Example
-`git clone https://github.com/LiuZhipeng99/AW4C.git`
+- `git clone https://github.com/LiuZhipeng99/AW4C.git`
 
 
 ```
@@ -16,10 +16,11 @@ import pandas as pd
 # Read the compressed JSON file
 df = pd.read_json("test_compressed_ActionableWarning.json.gz", compression='gzip')
 # Use the dataframe as needed
-
 ```
 
 - Screenshots
+
+
 ![](./dataset_screenshots.png)
 
 # Steps to Reproduce
