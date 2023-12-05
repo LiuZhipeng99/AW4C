@@ -26,7 +26,7 @@ def extract_code_from_warningLine(source_code: str, warningLineNumber: int) -> s
     
 def extract_code_from_patches(source_code: str, warningLineNumber: int, patches: Dict[str, List[Tuple[int, str]]]) -> str:
     def extract_closest_relative_continuous_subsequence(line_numbers, target) -> List:
-        """ gpt4
+        """ 
         Extracts the closest subsequence of relatively continuous line numbers from the list, 
         even if the target number is not in the list. 
         'Relatively continuous' means the difference between any two consecutive numbers in the subsequence is at most 2.
@@ -86,9 +86,6 @@ def get_difftext_warningContext_fromLocal(repository_url, commit_id, warning_fil
     return "UnkonwnCommit","UnkonwnCommit" 
 
 
-
-
-
 def read_json_files(file_path,isIntroduced): 
     def extract_repo_and_commit_id(githubCommitLink):
         parts = githubCommitLink.split('/') # example: https://github.com/ishepard/pydriller/commit/fecaac2607
@@ -117,7 +114,7 @@ def read_json_files(file_path,isIntroduced):
             outs = get_difftext_warningContext_fromLocal(repo_url, commit_id, warning_fileName ,warning_lineNumber , isIntroduced) 
             if outs[0] == "WarningFileNotModified": 
                 logging.debug("Filter2: " + warning_fileName +  "not in" + record['githubCommitLink'])  
-                continue  # Filter2 过滤那些源文件未改动 但引起了警告消失的情况 https://github.com/danielwaterworth/Raphters/commit/1803ff1947945e3aee261820f7e99bbab9eda92f
+                continue  # Filter2: Filter those cases where the source file has not been changed but caused the warning to disappear. https://github.com/danielwaterworth/Raphters/commit/1803ff1947945e3aee261820f7e99bbab9eda92f
             if outs[0] == "UnkonwnCommit": 
                 logging.error("Update your local branch : " + record['githubCommitLink'])
                 continue
