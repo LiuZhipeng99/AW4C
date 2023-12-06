@@ -1,19 +1,20 @@
-import os, json
+import os
+import json
+import subprocess
+import concurrent.futures
 import pandas as pd
 import numpy as np
+from typing import List, Tuple, Optional, Dict, Union
 
 from pydriller import Repository
 from pydriller.domain.commit import ModificationType
-import subprocess
-import concurrent.futures
-from typing import List, Tuple, Optional, Dict, Union
 
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%H:%M:%S')
 logging.getLogger('pydriller').setLevel(logging.WARNING)
 
 def extract_code_from_warningLine(source_code: str, warningLineNumber: int) -> str:
-    # The warning only gave a line number. 1) simply use the line number to extract the code, 2) extract codes from ast where line numbers are located, 3) others. like path 
+    # The warning only gave a line number. 1) simply use the line number to extract the code, 2) extract codes from ast where line numbers are located, 3) others. e.g. diff text, ast, ...
     snippet = []
     lines = source_code.split('\n')
     line_numbers = {warningLineNumber}
@@ -22,7 +23,8 @@ def extract_code_from_warningLine(source_code: str, warningLineNumber: int) -> s
         if i in line_numbers:
             snippet.append(line)
     return '\n'.join(snippet)
-    
+
+
 def extract_code_from_patches(source_code: str, warningLineNumber: int, patches: Dict[str, List[Tuple[int, str]]]) -> str:
     def extract_closest_relative_continuous_subsequence(line_numbers, target) -> List:
         """ 
@@ -55,6 +57,7 @@ def extract_code_from_patches(source_code: str, warningLineNumber: int, patches:
         if i in line_numbers:
             snippet.append(line)
     return '\n'.join(snippet)
+
 
 def get_difftext_warningContext_fromLocal(repository_url, commit_id, warning_fileName, line_number, isIntroduced) ->Tuple[str, str]:
     for commit in Repository(repository_url,clone_repo_to="./tmp_github/").traverse_commits():
@@ -122,7 +125,6 @@ def read_json_files(file_path,isIntroduced):
         return (update_json_list)
 
 
-
 def read_json_files_parallel(folder_path):
     json_data = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=12) as executor: 
@@ -149,8 +151,8 @@ def read_json_files_parallel(folder_path):
 if __name__ == '__main__':
     output_gzip_aw = './compressed_ActionableWarning.json.gz'
     output_gzip_naw = './compressed_NonActionableWarning.json.gz'
-    Generated_acfolder = './GeneratedDataset/ActionableWarning'
-    Generated_nacfolder = './GeneratedDataset/NonActionableWarning'
+    Generated_acfolder = './GeneratedDataset_raw_data/ActionableWarning'
+    Generated_nacfolder = './GeneratedDataset_raw_data/NonActionableWarning'
 
     def get_dataframe(folder_path, output_file): # -> DataFrame
         if os.path.exists(output_file):
@@ -170,6 +172,7 @@ if __name__ == '__main__':
     df_aw = get_dataframe(Generated_acfolder, output_gzip_aw)
     df_naw = get_dataframe(Generated_nacfolder, output_gzip_naw)
 
+    
     print("AW & NAW")
     print( len(df_aw), len(df_naw)) 
     # Display the dataframes
