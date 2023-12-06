@@ -16,9 +16,8 @@ def extract_code_from_warningLine(source_code: str, warningLineNumber: int) -> s
     # The warning only gave a line number. 1) simply use the line number to extract the code, 2) extract codes from ast where line numbers are located, 3) others. like path 
     snippet = []
     lines = source_code.split('\n')
-    # introduced warning choose 1)
-    # line_numbers = {warningLineNumber}
-    line_numbers = {warningLineNumber - 1, warningLineNumber, warningLineNumber + 1,warningLineNumber-2,warningLineNumber+2}
+    line_numbers = {warningLineNumber}
+    # line_numbers = {warningLineNumber - 1, warningLineNumber, warningLineNumber + 1}
     for i, line in enumerate(lines, start=1):
         if i in line_numbers:
             snippet.append(line)
@@ -27,8 +26,7 @@ def extract_code_from_warningLine(source_code: str, warningLineNumber: int) -> s
 def extract_code_from_patches(source_code: str, warningLineNumber: int, patches: Dict[str, List[Tuple[int, str]]]) -> str:
     def extract_closest_relative_continuous_subsequence(line_numbers, target) -> List:
         """ 
-        Extracts the closest subsequence of relatively continuous line numbers from the list, 
-        even if the target number is not in the list. 
+        Extracts the closest subsequence of relatively continuous line numbers from the list,  even if the target number is not in the list. 
         'Relatively continuous' means the difference between any two consecutive numbers in the subsequence is at most 2.
         """
         # Find the closest index to the target number
@@ -53,7 +51,6 @@ def extract_code_from_patches(source_code: str, warningLineNumber: int, patches:
     line_numbers = {warningLineNumber - 1, warningLineNumber, warningLineNumber + 1} | set(lines_list)
     lines = source_code.split('\n')
     snippet = []
-
     for i, line in enumerate(lines, start=1):
         if i in line_numbers:
             snippet.append(line)
@@ -68,19 +65,19 @@ def get_difftext_warningContext_fromLocal(repository_url, commit_id, warning_fil
                 else:
                     assert modified_file.old_path
                     diff_file_path = modified_file.old_path
-
+                # diff_file_path similar to modified_file.filename
                 if diff_file_path.replace('\\', '/') == warning_fileName: 
                     patches = (modified_file.diff_parsed) 
                     patches['change_type'] = modified_file.change_type.name
                     if isIntroduced: 
                         if modified_file.change_type in [ModificationType.MODIFY, ModificationType.ADD]:  
-                            warningContextCode = extract_code_from_warningLine(modified_file.source_code, line_number)
+                            warningContextCode = extract_code_from_warningLine(modified_file.source_code, line_number) # The context of the introduced warning is not obtained from the difftext
                             if modified_file.change_type == ModificationType.ADD:
-                                patches['added'] = [] 
+                                patches['added'] = [] # Reduced storage, source code available from Github
                             return patches, warningContextCode 
                     else:
                         if modified_file.change_type == ModificationType.MODIFY:  
-                            warningContextCode = extract_code_from_patches(modified_file.source_code_before, line_number, patches) # 
+                            warningContextCode = extract_code_from_patches(modified_file.source_code_before, line_number, patches) 
                             return patches, warningContextCode
             return "WarningFileNotModified", "WarningFileNotModified" 
     return "UnkonwnCommit","UnkonwnCommit" 
@@ -98,17 +95,17 @@ def read_json_files(file_path,isIntroduced):
         json_list = json.load(file)
         update_json_list = []
         for record in json_list:
-            # record['actionableLabel'] =  not isIntroduced # 两个文件分开 或者打标签后合并.
+            # record['actionableLabel'] =  not isIntroduced # 两个文件分开或新增一个字段.
             
-            if not record['githubCommitLink'].startswith(('http://', 'https://')): # "githubCommitLink does not start with 'http' or 'https'"
+            if not record['githubCommitLink'].startswith(('http://', 'https://')):  # "githubCommitLink does not start with 'http' or 'https'"
                 logging.error(f"Error decoding record: {record['githubCommitLink']}")
                 continue
             if not record['filePath'].startswith('tmp_github/') or  "Cppcheck failed to extract a valid configuration. Use -v for more details." in record['warningMessage'] or "Please note:" in record['warningMessage']:  #同时linenumber为0 type为noValidConfiguration
                 logging.debug("Filter1: noValidConfiguration") 
                 continue # Filter1 
             
-            
             repo_url, commit_id, repository_name = extract_repo_and_commit_id(record['githubCommitLink'])
+            record['repositoryName'] = repository_name
             warning_fileName = '/'.join(record['filePath'].split('/')[2:])
             warning_lineNumber = int(record['lineNumber'])
             outs = get_difftext_warningContext_fromLocal(repo_url, commit_id, warning_fileName ,warning_lineNumber , isIntroduced) 
@@ -116,11 +113,9 @@ def read_json_files(file_path,isIntroduced):
                 logging.debug("Filter2: " + warning_fileName +  "not in" + record['githubCommitLink'])  
                 continue  # Filter2: Filter those cases where the source file has not been changed but caused the warning to disappear. https://github.com/danielwaterworth/Raphters/commit/1803ff1947945e3aee261820f7e99bbab9eda92f
             if outs[0] == "UnkonwnCommit": 
-                logging.error("Update your local branch : " + record['githubCommitLink'])
+                logging.error("Update your local branch : " + record['githubCommitLink']) # the local repository is not up-to-date
                 continue
-            record['difftext'] = outs[0] 
-            record['warningContext'] = outs[1]
-            record['repositoryName'] = repository_name
+            record['difftext'], record['warningContext'] = outs
             update_json_list.append(record)
         
         logging.info(f'Finished reading JSON file: {file_path}')
@@ -175,7 +170,6 @@ if __name__ == '__main__':
     df_aw = get_dataframe(Generated_acfolder, output_gzip_aw)
     df_naw = get_dataframe(Generated_nacfolder, output_gzip_naw)
 
-
     print("AW & NAW")
     print( len(df_aw), len(df_naw)) 
     # Display the dataframes
@@ -183,15 +177,6 @@ if __name__ == '__main__':
     print(df_aw)
     print("Non-Actionable Warning DataFrame:")
     print(df_naw)
-    # Check for NaN values in each column
-    nan_columns = df_naw.columns[df_naw.isna().any()].tolist()
-
-    # Display columns with NaN values
-    print("Columns with NaN values:", nan_columns)
-
-
-    # filtered_df = df_aw[df_aw['warningContext'] != 'UnkonwnCommit']
-    # print(len(filtered_df))
 
     # Analyze the difference between the two files
     print(df_aw['warningContext'].str.len().mean())
