@@ -33,3 +33,5 @@ df = pd.read_json("test_compressed_ActionableWarning.json.gz", compression='gzip
 - Tools for mining： https://github.com/LiuZhipeng99/AWMiner (Open source soon)
 
 ## TODO
+- Finish readme
+- Optimized incremental analysis algorithm for cppcheck special field "Info"
