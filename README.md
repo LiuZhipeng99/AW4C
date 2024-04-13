@@ -30,7 +30,7 @@ df = pd.read_json("test_compressed_ActionableWarning.json.gz", compression='gzip
 - Git
 - Python 3
 - Java 17
-- Tools for mining： https://github.com/LiuZhipeng99/AWMiner (Open source soon)
+- Tools for mining： https://github.com/LiuZhipeng99/AWMiner
 
 ## TODO
 - Finish readme
