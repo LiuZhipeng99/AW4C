@@ -1,6 +1,7 @@
 # Description
 [![DOI](https://zenodo.org/badge/727707886.svg)](https://zenodo.org/doi/10.5281/zenodo.10277281)
 
+![image](https://github.com/LiuZhipeng99/AW4C/assets/44400198/80663a39-f9e8-494a-a1ec-4ce2c7668634)
 
 Paper: [preprint](https://github.com/LiuZhipeng99/AW4C/blob/main/MSR2024-final.pdf)
 # Dataset Details
